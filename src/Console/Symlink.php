@@ -3,16 +3,18 @@
 namespace Inertia\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
 use Inertia\PageViewFinder;
 
-class ComponentLink extends Command
+class Symlink extends Command
 {
     /**
      * The console command signature.
      *
      * @var string
      */
-    protected $signature = 'inertia:component-link
+    protected $signature = 'inertia:symlink
+                {--path : The relative path of the page views. Default to "resources/js/Pages"}
                 {--relative : Create the symbolic link using relative paths}
                 {--force : Recreate existing symbolic links}';
 
@@ -21,17 +23,17 @@ class ComponentLink extends Command
      *
      * @var string
      */
-    protected $description = 'Create the symbolic links configured for loading the package components';
+    protected $description = 'Create the symbolic links configured for loading the package views';
 
     /**
      * Execute the console command.
      *
+     * @param  \Illuminate\Filesystem\Filesystem  $fs
      * @return void
      */
-    public function handle()
+    public function handle(Filesystem $fs)
     {
         $this->ensureComponentBaseDirectoryExists();
-        $fs = $this->laravel->make('files');
 
         foreach ($this->hints() as $namespace => $links) {
             foreach ($links as $target) {
@@ -63,13 +65,29 @@ class ComponentLink extends Command
         }
     }
 
+    /**
+     * Get the base path of the page views.
+     *
+     * @param  null|string  $path
+     * @return string
+     */
     protected function componentPath(?string $path = null): string
     {
+        if ($p = $this->option('path')) {
+            $basePath = trim($p, '/').'/'.PageViewFinder::$symlinkBaseDirectory;
+            return base_path($path ? $basePath.'/'.$path : $basePath);
+        }
+
         $basePath = 'js/Pages/'.PageViewFinder::$symlinkBaseDirectory;
 
         return resource_path($path ? $basePath.'/'.$path : $basePath);
     }
 
+    /**
+     * Create the page view base path if not exists.
+     *
+     * @return void
+     */
     protected function ensureComponentBaseDirectoryExists()
     {
         $path = $this->componentPath();
@@ -87,7 +105,7 @@ class ComponentLink extends Command
      */
     protected function hints()
     {
-        return $this->laravel[PageViewFinder::class]->getHints();
+        return $this->laravel->make(PageViewFinder::class)->getHints();
     }
 
     /**
