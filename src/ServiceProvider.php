@@ -20,6 +20,7 @@ class ServiceProvider extends BaseServiceProvider
     public function register(): void
     {
         $this->app->singleton(ResponseFactory::class);
+        $this->app->singleton(PageViewFinder::class);
         $this->app->bind(Gateway::class, HttpGateway::class);
 
         $this->mergeConfigFrom(
