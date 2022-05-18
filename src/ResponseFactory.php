@@ -97,7 +97,7 @@ class ResponseFactory
         }
 
         return new Response(
-            $component,
+            app(PageViewFinder::class)->find($component),
             array_merge($this->sharedProps, $props),
             $this->rootView,
             $this->getVersion()
@@ -118,5 +118,23 @@ class ResponseFactory
         }
 
         return new RedirectResponse($url);
+    }
+
+    public function loadViewsFrom(string $path, string $namespace)
+    {
+        $paths = app('config')->get('view.paths');
+        $finder = app(PageViewFinder::class);
+
+        if (isset($paths) && is_array($paths)) {
+            foreach ($paths as $viewPath) {
+                if (is_dir($appPath = $viewPath.'/vendor/'.$namespace)) {
+                    $finder->addNamespace($namespace, $appPath);
+                }
+            }
+        }
+
+        $finder->addNamespace($namespace, $path);
+
+        return $this;
     }
 }
